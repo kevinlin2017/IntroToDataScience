@@ -510,7 +510,6 @@ varImpPlot(rf.8)
 
 
 
-
 #==============================================================================
 #
 # Video #5
@@ -524,16 +523,29 @@ varImpPlot(rf.8)
 # submission of rf.5 to Kaggle to see if our OOB error estimate is accurate.
 
 # Subset our test records and features
-test.submit.df <- data.combined[892:1309, c("pclass", "title", "family.size")]
+test.submit.df <- data.combined[892:1309, c("Pclass", "Title", "Family.size")]
+
+# in test data set, there is one n/a in fare, has to replace it with $5.00 (low value since the passenger is in  3rd class)
+# first, need to find out how many n/a's in Fare. Can't use predict function if there is na value in fare
+sum(is.na(data.combined$Fare))
+data.combined[which(is.na(data.combined$Fare)), "Fare"] <- "5.00"
+
+test.submit.rf8.df <- data.combined[892:1309, c("Pclass", "Title", "Fare", "Family.size")]
 
 # Make predictions
 rf.5.preds <- predict(rf.5, test.submit.df)
 table(rf.5.preds)
 
+rf.8.preds <- predict(rf.8, test.submit.rf8.df)
+table(rf.8.preds)
+
 # Write out a CSV file for submission to Kaggle
 submit.df <- data.frame(PassengerId = rep(892:1309), Survived = rf.5.preds)
+submit.rf8.df <- data.frame(PassengerId = rep(892:1309), Survived = rf.8.preds)
+                        
+write.csv(submit.df, file = "RF_SUB_20180405_1.csv", row.names = FALSE)
+write.csv(submit.rf8.df, file = "RF_SUB_20180405_2.csv", row.names = FALSE)
 
-write.csv(submit.df, file = "RF_SUB_20160215_1.csv", row.names = FALSE)
 
 # Our submission scores 0.79426, but the OOB predicts that we should score 0.8159.
 # Let's look into cross-validation using the caret package to see if we can get
