@@ -570,7 +570,7 @@ cv.10.folds <- createMultiFolds(rf.label, k = 10, times = 10)
 table(rf.label)
 342 / 549
 
-table(rf.label[cv.10.folds[[33]]])
+table(rf.label[cv.10.folds[[30]]])
 308 / 494
 
 
@@ -582,7 +582,9 @@ ctrl.1 <- trainControl(method = "repeatedcv", number = 10, repeats = 10,
 # Set up doSNOW package for multi-core training. This is helpful as we're going
 # to be training a lot of trees.
 # NOTE - This works on Windows and Mac, unlike doMC
-cl <- makeCluster(6, type = "SOCK")
+# Original code:  cl <- makeCluster(6, type = "SOCK")
+# Changed from 6 to 3 here.
+cl <- makeCluster(3, type = "SOCK")
 registerDoSNOW(cl)
 
 
@@ -639,3 +641,25 @@ stopCluster(cl)
 
 # Check out results
 rf.5.cv.3
+
+
+# check my own rf.train.8
+
+set.seed(37596)
+cv.3.folds <- createMultiFolds(rf.label, k = 3, times = 10)
+
+ctrl.3 <- trainControl(method = "repeatedcv", number = 3, repeats = 10,
+                       index = cv.3.folds)
+
+cl <- makeCluster(6, type = "SOCK")
+registerDoSNOW(cl)
+
+set.seed(94622)
+rf.8.cv.3 <- train(x = rf.train.8, y = rf.label, method = "rf", tuneLength = 3,
+                   ntree = 1000, trControl = ctrl.3)
+
+#Shutdown cluster
+stopCluster(cl)
+
+# Check out results
+rf.8.cv.3
