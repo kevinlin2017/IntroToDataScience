@@ -711,8 +711,13 @@ rpart.1.cv.1
 prp(rpart.1.cv.1$finalModel, type = 0, extra = 1, under = TRUE)
 
 
+# check my feature combo with fare
 
+features2 <- c("Pclass", "Title", "Family.size", "Fare")
+rpart.train.2 <- data.combined[1:891, features2]
 
+rpart.1.cv.2 <- rpart.cv(94622, rpart.train.2, rf.label, ctrl.3)
+rpart.1.cv.2
 
 
 # The plot bring out some interesting lines of investigation. Namely:
@@ -729,7 +734,7 @@ prp(rpart.1.cv.1$finalModel, type = 0, extra = 1, under = TRUE)
 
 
 # Both rpart and rf confirm that title is important, let's investigate further
-table(data.combined$title)
+table(data.combined$Title)
 
 # Parse out last name and title
 data.combined[1:25, "name"]
