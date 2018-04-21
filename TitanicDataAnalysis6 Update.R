@@ -712,12 +712,21 @@ prp(rpart.1.cv.1$finalModel, type = 0, extra = 1, under = TRUE)
 
 
 # check my feature combo with fare
+#summary(data.combined$Fare)
+# has to convert Fare into numeric ahead
+
+data.combined$Fare <- as.numeric(as.character(data.combined$Fare))
 
 features2 <- c("Pclass", "Title", "Family.size", "Fare")
 rpart.train.2 <- data.combined[1:891, features2]
 
 rpart.1.cv.2 <- rpart.cv(94622, rpart.train.2, rf.label, ctrl.3)
 rpart.1.cv.2
+
+# Plot
+prp(rpart.1.cv.2$finalModel, type = 0, extra = 1, under = TRUE)
+
+# from the graph above, nothing changed and that's why the accuracy is not changed, explanation could be Fare alone isn't helping.
 
 
 # The plot bring out some interesting lines of investigation. Namely:
@@ -737,9 +746,9 @@ rpart.1.cv.2
 table(data.combined$Title)
 
 # Parse out last name and title
-data.combined[1:25, "name"]
+data.combined[1:25, "Name"]
 
-name.splits <- str_split(data.combined$name, ",")
+name.splits <- str_split(data.combined$Name, ",")
 name.splits[1]
 last.names <- sapply(name.splits, "[", 1)
 last.names[1:10]
@@ -767,9 +776,9 @@ table(titles)
 data.combined$new.title <- as.factor(titles)
 
 # Visualize new version of title
-ggplot(data.combined[1:891,], aes(x = new.title, fill = survived)) +
+ggplot(data.combined[1:891,], aes(x = new.title, fill = Survived)) +
   geom_bar() +
-  facet_wrap(~ pclass) + 
+  facet_wrap(~ Pclass) + 
   ggtitle("Surival Rates for new.title by pclass")
 
 # Collapse titles based on visual analysis
@@ -783,14 +792,14 @@ indexes <- which(data.combined$new.title == "Dr." |
 data.combined$new.title[indexes] <- "Mr."
 
 # Visualize 
-ggplot(data.combined[1:891,], aes(x = new.title, fill = survived)) +
+ggplot(data.combined[1:891,], aes(x = new.title, fill = Survived)) +
   geom_bar() +
-  facet_wrap(~ pclass) +
+  facet_wrap(~ Pclass) +
   ggtitle("Surival Rates for Collapsed new.title by pclass")
 
 
 # Grab features
-features <- c("pclass", "new.title", "family.size")
+features <- c("Pclass", "new.title", "Family.size")
 rpart.train.2 <- data.combined[1:891, features]
 
 # Run CV and check out results
@@ -802,39 +811,41 @@ prp(rpart.2.cv.1$finalModel, type = 0, extra = 1, under = TRUE)
 
 
 # Dive in on 1st class "Mr."
-indexes.first.mr <- which(data.combined$new.title == "Mr." & data.combined$pclass == "1")
+indexes.first.mr <- which(data.combined$new.title == "Mr." & data.combined$Pclass == "1")
 first.mr.df <- data.combined[indexes.first.mr, ]
 summary(first.mr.df)
 
 # One female?
-first.mr.df[first.mr.df$sex == "female",]
+first.mr.df[first.mr.df$Sex == "female",]
 
 # Update new.title feature
 indexes <- which(data.combined$new.title == "Mr." & 
-                   data.combined$sex == "female")
+                   data.combined$Sex == "female")
 data.combined$new.title[indexes] <- "Mrs."
 
 # Any other gender slip-ups?
-length(which(data.combined$sex == "female" & 
+length(which(data.combined$Sex == "female" & 
                (data.combined$new.title == "Master." |
                   data.combined$new.title == "Mr.")))
 
 # Refresh data frame
-indexes.first.mr <- which(data.combined$new.title == "Mr." & data.combined$pclass == "1")
+indexes.first.mr <- which(data.combined$new.title == "Mr." & data.combined$Pclass == "1")
 first.mr.df <- data.combined[indexes.first.mr, ]
 
 # Let's look at surviving 1st class "Mr."
-summary(first.mr.df[first.mr.df$survived == "1",])
-View(first.mr.df[first.mr.df$survived == "1",])
+summary(first.mr.df[first.mr.df$Survived == "1",])
+View(first.mr.df[first.mr.df$Survived == "1",])
 
 # Take a look at some of the high fares
-indexes <- which(data.combined$ticket == "PC 17755" |
-                   data.combined$ticket == "PC 17611" |
-                   data.combined$ticket == "113760")
+indexes <- which(data.combined$Ticket == "PC 17755" |
+                   data.combined$Ticket == "PC 17611" |
+                   data.combined$Ticket == "113760")
 View(data.combined[indexes,])
 
+data.combined$Fare <- as.numeric(as.character(data.combined$Fare))
+
 # Visualize survival rates for 1st class "Mr." by fare
-ggplot(first.mr.df, aes(x = fare, fill = survived)) +
+ggplot(first.mr.df, aes(x = Fare, fill = Survived)) +
   geom_density(alpha = 0.5) +
   ggtitle("1st Class 'Mr.' Survival Rates by fare")
 
@@ -842,12 +853,12 @@ ggplot(first.mr.df, aes(x = fare, fill = survived)) +
 # Engineer features based on all the passengers with the same ticket
 ticket.party.size <- rep(0, nrow(data.combined))
 avg.fare <- rep(0.0, nrow(data.combined))
-tickets <- unique(data.combined$ticket)
+Tickets <- unique(data.combined$Ticket)
 
-for (i in 1:length(tickets)) {
-  current.ticket <- tickets[i]
-  party.indexes <- which(data.combined$ticket == current.ticket)
-  current.avg.fare <- data.combined[party.indexes[1], "fare"] / length(party.indexes)
+for (i in 1:length(Tickets)) {
+  current.Ticket <- Tickets[i]
+  party.indexes <- which(data.combined$Ticket == current.Ticket)
+  current.avg.fare <- data.combined[party.indexes[1], "Fare"] / length(party.indexes)
   
   for (k in 1:length(party.indexes)) {
     ticket.party.size[party.indexes[k]] <- length(party.indexes)
@@ -864,11 +875,11 @@ summary(first.mr.df)
 
 
 # Visualize new features
-ggplot(first.mr.df[first.mr.df$survived != "None",], aes(x = ticket.party.size, fill = survived)) +
+ggplot(first.mr.df[first.mr.df$Survived != "None",], aes(x = ticket.party.size, fill = Survived)) +
   geom_density(alpha = 0.5) +
   ggtitle("Survival Rates 1st Class 'Mr.' by ticket.party.size")
 
-ggplot(first.mr.df[first.mr.df$survived != "None",], aes(x = avg.fare, fill = survived)) +
+ggplot(first.mr.df[first.mr.df$Survived != "None",], aes(x = avg.fare, fill = Survived)) +
   geom_density(alpha = 0.5) +
   ggtitle("Survival Rates 1st Class 'Mr.' by avg.fare")
 
@@ -879,14 +890,19 @@ summary(data.combined$avg.fare)
 # One missing value, take a look
 data.combined[is.na(data.combined$avg.fare), ]
 
+#replace the n/a value with 5 before for passengerID 1044
+data.combined[data.combined$Fare == 5,]
+
 # Get records for similar passengers and summarize avg.fares
-indexes <- with(data.combined, which(pclass == "3" & title == "Mr." & family.size == 1 &
-                                       ticket != "3701"))
+indexes <- with(data.combined, which(Pclass == "3" & Title == "Mr." & Family.size == 1 &
+                                       Ticket != "3701"))
 similar.na.passengers <- data.combined[indexes,]
 summary(similar.na.passengers$avg.fare)
 
 # Use median since close to mean and a little higher than mean
-data.combined[is.na(avg.fare), "avg.fare"] <- 7.840
+# data.combined[is.na(avg.fare), "avg.fare"] <- 7.840
+data.combined[data.combined$Ticket == "3701", "avg.fare"] <- 7.840
+data.combined[data.combined$Ticket =="3701",]
 
 # Leverage caret's preProcess function to normalize data
 preproc.data.combined <- data.combined[, c("ticket.party.size", "avg.fare")]
@@ -898,14 +914,20 @@ postproc.data.combined <- predict(preProc, preproc.data.combined)
 cor(postproc.data.combined$ticket.party.size, postproc.data.combined$avg.fare)
 
 # How about for just 1st class all-up?
-indexes <- which(data.combined$pclass == "1")
+indexes <- which(data.combined$Pclass == "1")
 cor(postproc.data.combined$ticket.party.size[indexes], 
     postproc.data.combined$avg.fare[indexes])
 # Hypothesis refuted again
 
+# check on 1st class Mr.
+indexes <- which(data.combined$Pclass == "1" & data.combined$Title == "Mr.")
+cor(postproc.data.combined$ticket.party.size[indexes], 
+    postproc.data.combined$avg.fare[indexes])
+
+
 
 # OK, let's see if our feature engineering has made any difference
-features <- c("pclass", "new.title", "family.size", "ticket.party.size", "avg.fare")
+features <- c("Pclass", "new.title", "Family.size", "ticket.party.size", "avg.fare")
 rpart.train.3 <- data.combined[1:891, features]
 
 # Run CV and check out results
